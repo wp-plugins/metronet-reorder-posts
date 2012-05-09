@@ -4,7 +4,7 @@ Author URI: http://metronet.no/
 Plugin URL: http://metronet.no/
 Requires at Least: 3.3
 Tags: reorder, posts, wordpress, post-type
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 
 A simple and easy way to reorder your posts in WordPress.
 
@@ -48,6 +48,10 @@ Probably, but we only support the latest version of WordPress.
 1. Metronet Reorder Posts allows you to easily drag and drop posts to change their order
 
 == Changelog ==
+
+= 1.0.3 =
+* Updated screenshot
+* Corrected function prefix
 
 = 1.0.2 =
 * Added ability to post type of posts to be reordered
