@@ -6,11 +6,11 @@ Requires at Least: 3.3
 Tags: reorder, posts, wordpress, post-type
 Stable tag: 1.0.3
 
-A simple and easy way to reorder your posts in WordPress.
+A simple and easy way to reorder your custom post-type posts in WordPress.
 
 == Description ==
 
-A simple and easy way to reorder your posts in WordPress. Adds drag and drop functionality for post ordering in the WordPress admin panel. Works with posts, pages and custom post-types.
+A simple and easy way to reorder your custom post-type posts in WordPress. Adds drag and drop functionality for post ordering in the WordPress admin panel. Works with custom post-types and regular posts.
 
 == Installation ==
 
@@ -19,7 +19,7 @@ Either install the plugin via the WordPress admin panel, or ...
 1. Upload `metronet-reorder-posts` to the `/wp-content/plugins/` directory.
 2. Activate the plugin through the 'Plugins' menu in WordPress.
 
-There are no configuration options in this plugin. Simply navigate to "Posts" > "Reorder" to change the order of your posts. Changes are saved immediately, there is no need to click a save or update button.
+There are no configuration options in this plugin. Simply navigate to "Posts" > "Reorder" to change the order of your posts. Changes are saved immediately, there is no need to click a save or update button. Additional links automatically appear for custom post-types.
 
 == Frequently Asked Questions ==
 
@@ -52,6 +52,7 @@ Probably, but we only support the latest version of WordPress.
 = 1.0.3 =
 * Updated screenshot
 * Corrected function prefix
+* Additional: changed readme.txt (didn't bump version number)
 
 = 1.0.2 =
 * Added ability to post type of posts to be reordered
