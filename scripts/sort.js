@@ -2,7 +2,7 @@ jQuery(document).ready(function($) {
 	var postList = $('#post-list');
 	
 	console.log( 'alert1' );
-	postList.nestedSortable( {
+	var blah = postList.nestedSortable( {
 		forcePlaceholderSize: true,
 		handle: 'div',
 		helper:	'clone',
@@ -14,8 +14,12 @@ jQuery(document).ready(function($) {
 		tabSize: 25,
 		tolerance: 'pointer',
 		toleranceElement: '> div',
-		listType: 'ul'
-	} );
+		listType: 'ul',
+		update: function( event, ui ) {
+			var order = $('ul#post-list').nestedSortable( 'toHierarchy',{startDepthCount: 0, listType: 'ul'});
+			console.log( order );
+		}
+	});
 	
 	console.log( 'alert2' );
 	/*

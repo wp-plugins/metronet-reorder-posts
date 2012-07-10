@@ -114,7 +114,7 @@ class Reorder {
 		$this->post_status = $post_status;
 
 		// Add actions
-		add_action( 'wp_ajax_post_sort',   array( $this, 'save_post_order'  ) );
+		add_action( 'wp_ajax_post_sort',   array( $this, 'ajax_save_post_order'  ) );
 		add_action( 'admin_print_styles',  array( $this, 'print_styles'     ) );
 		add_action( 'admin_print_scripts', array( $this, 'print_scripts'    ) );
 		add_action( 'admin_menu',          array( $this, 'enable_post_sort' ), 10, 'page' );
@@ -140,7 +140,7 @@ class Reorder {
 	 * @access public
 	 * @global object $wpdb  The primary global database object used internally by WordPress
 	 */
-	public function save_post_order() {
+	public function ajax_save_post_order() {
 		global $wpdb;
 
 		// Verify nonce value, for security purposes
@@ -241,7 +241,7 @@ class Reorder {
 		$post = $the_post;
 		setup_postdata( $post );
 		?>
-		<li id="<?php the_id(); ?>"><div><?php the_title(); ?></div></li>
+		<li id="list_<?php the_id(); ?>"><div><?php the_title(); ?></div></li>
 		<?php
 	} //end output_row
 	
@@ -261,7 +261,7 @@ class Reorder {
 		
 		setup_postdata( $post );
 		?>
-		<li id="<?php the_id(); ?>">
+		<li id="list_<?php the_id(); ?>">
 			<div><?php the_title(); ?></div>
 			<ul class='children'>
 			<?php $this->output_row_children( $post_children, $all_children ); ?>
