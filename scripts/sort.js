@@ -21,7 +21,6 @@ jQuery(document).ready(function($) {
 			//console.log( order ); 
 			//return;
 			$.post( ajaxurl, { action: 'post_sort', nonce: sortnonce, data: order }, function( response ) {
-				console.log( response );
 			}, 'json' );
 			
 		}

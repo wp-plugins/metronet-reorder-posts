@@ -68,7 +68,7 @@ function mn_reorder_posts_init() {
 		new Reorder(
 			array(
 				'post_type'   => $post_type,
-				'order'       => 'DESC',
+				'order'       => 'ASC',
 				'heading'     => __( 'Metronet reorder posts', 'reorder' ),
 				'final'       => '',
 				'initial'     => '',
