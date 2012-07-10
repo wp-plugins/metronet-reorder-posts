@@ -145,22 +145,44 @@ class Reorder {
 
 		// Verify nonce value, for security purposes
 		if ( !wp_verify_nonce( $_POST['nonce'], 'sortnonce' ) ) die( '' );
-
-		// Split post output
-		$order = explode( ',', $_POST['order'] );
-
-		// Loop through blocks and stash in DB accordingly
-		$counter = count( $order );
-		foreach ( $order as $post_id ) {
+		
+		//Get JSON data
+		$post_data = json_decode( str_replace( "\\", '', $_POST[ 'data' ] ) );
+		
+		//Iterate through post data
+		$this->update_posts( $post_data, 0 );
+		
+		die( json_encode( array( 'success' => 'yo' ) ) );
+	} //end ajax_save_post_order
+	
+	/**
+	 * Saving the post order recursively	 
+	 *
+	 * @author Ronald Huereca <ronald@metronet.no>
+	 * @since Reorder 1.0
+	 * @access public
+	 * @global object $wpdb  The primary global database object used internally by WordPress
+	 */
+	private function update_posts( $post_data, $parent_id ) {
+		global $wpdb;
+		$count = 0;
+		
+		foreach( $post_data as $post_obj ) {
+			$post_id = absint( $post_obj->id );
+			$children = isset( $post_obj->children ) ? $post_obj->children : false;
+			if ( $children ) 
+				$this->update_posts( $children, $post_id );
+				
+			//Update the posts
 			$wpdb->update(
 				$wpdb->posts,
-				array( 'menu_order' => $counter ),
+				array( 'menu_order' => $count, 'post_parent' => $parent_id ),
 				array( 'ID'         => $post_id )
 			);
-			$counter = $counter - 1;
-		}
-		die( 1 );
-	}
+			$count += 1;
+			
+		} //end foreach $post_data
+	} //end update_posts
 
 	/**
 	 * Print styles to admin page
@@ -285,9 +307,6 @@ class Reorder {
 	private function output_row_children( $children_pages, $all_children ) {
 		foreach( $children_pages as $child ) {
 			$post_id = $child->ID;
-			if ( $post_id == 181 ) {
-			//	die( 'blah' );
-			}
 			if ( isset( $all_children[ $post_id ] ) && !empty( $all_children[ $post_id ] ) ) {
 				$this->output_row_hierarchical( $child, $all_children[ $post_id ], $all_children );
 			} else {

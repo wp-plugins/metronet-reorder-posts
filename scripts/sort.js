@@ -1,7 +1,7 @@
-jQuery(document).ready(function($) {		
+jQuery(document).ready(function($) {	
+	//Variable sortnonce is declared globally	
 	var postList = $('#post-list');
 	
-	console.log( 'alert1' );
 	var blah = postList.nestedSortable( {
 		forcePlaceholderSize: true,
 		handle: 'div',
@@ -16,12 +16,17 @@ jQuery(document).ready(function($) {
 		toleranceElement: '> div',
 		listType: 'ul',
 		update: function( event, ui ) {
-			var order = $('ul#post-list').nestedSortable( 'toHierarchy',{startDepthCount: 0, listType: 'ul'});
-			console.log( order );
+			var order = $('ul#post-list').nestedSortable( 'toHierarchy',{ listType: 'ul'});
+			order = JSON.stringify( order , null, 2);
+			//console.log( order ); 
+			//return;
+			$.post( ajaxurl, { action: 'post_sort', nonce: sortnonce, data: order }, function( response ) {
+				console.log( response );
+			}, 'json' );
+			
 		}
 	});
 	
-	console.log( 'alert2' );
 	/*
 
 	postList.sortable({
