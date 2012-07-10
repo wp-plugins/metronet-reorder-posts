@@ -64,10 +64,6 @@ function mn_reorder_posts_init() {
 	$post_types = get_post_types( '','names' ); 
 	foreach ( $post_types as $post_type ) {
 
-		// Don't bother with hierarchical post types
-		if ( is_post_type_hierarchical( $post_type ) )
-			continue;
-
 		// Instantiate new reordering
 		new Reorder(
 			array(

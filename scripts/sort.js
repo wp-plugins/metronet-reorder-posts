@@ -1,5 +1,24 @@
 jQuery(document).ready(function($) {		
 	var postList = $('#post-list');
+	
+	console.log( 'alert1' );
+	postList.nestedSortable( {
+		forcePlaceholderSize: true,
+		handle: 'div',
+		helper:	'clone',
+		items: 'li',
+		maxLevels: 3,
+		opacity: .6,
+		placeholder: 'placeholder',
+		revert: 250,
+		tabSize: 25,
+		tolerance: 'pointer',
+		toleranceElement: '> div',
+		listType: 'ul'
+	} );
+	
+	console.log( 'alert2' );
+	/*
 
 	postList.sortable({
 		update: function(event, ui) {
@@ -14,9 +33,11 @@ jQuery(document).ready(function($) {
 				data:{
 					action: 'post_sort', // Tell WordPress how to handle this ajax request
 					order: postList.sortable('toArray').toString(), // Passes ID's of list items in	1,3,2 format
-					nonce: sortnonce,
+					nonce: sortnonce, 
 				},
 				success: function(response) {
+					console.log( response );
+					return;
 					$('#loading-animation').hide(); // Hide the loading animation
 					$('#reorder-error').html('There was an error worked'); // Error message
 					$('#reorder-error').html(response); // Error message
@@ -33,4 +54,5 @@ jQuery(document).ready(function($) {
 			$.ajax(opts);
 		}
 	});	
+	*/
 });

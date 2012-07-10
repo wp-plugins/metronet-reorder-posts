@@ -129,7 +129,7 @@ class Reorder {
 	 * @access public
 	 */
 	public function create_nonce() {
-		echo "<script>sortnonce = '" .  wp_create_nonce( 'sortnonce' ) . "';</script>";
+		echo "<script>var sortnonce = '" .  wp_create_nonce( 'sortnonce' ) . "';</script>";
 	}
 
 	/**
@@ -144,7 +144,7 @@ class Reorder {
 		global $wpdb;
 
 		// Verify nonce value, for security purposes
-		wp_verify_nonce( json_encode( array( $_POST['nonce'] ) ), 'sortnonce' );
+		if ( !wp_verify_nonce( $_POST['nonce'], 'sortnonce' ) ) die( '' );
 
 		// Split post output
 		$order = explode( ',', $_POST['order'] );
@@ -159,7 +159,6 @@ class Reorder {
 			);
 			$counter = $counter - 1;
 		}
-
 		die( 1 );
 	}
 
@@ -194,8 +193,8 @@ class Reorder {
 
 		$pages = array( 'edit.php' );
 		if ( in_array( $pagenow, $pages ) ) {
-			wp_enqueue_script( 'jquery-ui-sortable' );
-			wp_enqueue_script( 'levert_posts', REORDER_URL . '/scripts/sort.js' );
+			wp_register_script( 'reorder_nested', REORDER_URL . '/scripts/jquery.mjs.nestedSortable.js', array( 'jquery-ui-sortable' ), '1.3.5', true );
+			wp_enqueue_script( 'reorder_posts', REORDER_URL . '/scripts/sort.js', array( 'reorder_nested' ) );
 		}
 	}
 
@@ -228,6 +227,77 @@ class Reorder {
 			);
 		}
 	}
+	
+	/**
+	* Post Row Output
+	*
+	* @author Ronald Huereca <ronald@metronet.no>
+	* @since Reorder 1.0.1
+	* @access private
+	* @param stdclass $post object to post
+	*/
+	private function output_row( $the_post ) {
+		global $post;
+		$post = $the_post;
+		setup_postdata( $post );
+		?>
+		<li id="<?php the_id(); ?>"><div><?php the_title(); ?></div></li>
+		<?php
+	} //end output_row
+	
+	/**
+	* Post Row Output for Hierarchical posts
+	*
+	* @author Ronald Huereca <ronald@metronet.no>
+	* @since Reorder 1.0.1
+	* @access private
+	* @param stdclass $post object to post
+	* @param array $all_children - array of children 
+	*/
+	private function output_row_hierarchical( $the_post, $post_children, $all_children ) {
+		global $post;
+		$post = $the_post;
+		$post_id = $the_post->ID;
+		
+		setup_postdata( $post );
+		?>
+		<li id="<?php the_id(); ?>">
+			<div><?php the_title(); ?></div>
+			<ul class='children'>
+			<?php $this->output_row_children( $post_children, $all_children ); ?>
+			</ul>
+		</li>
+		<?php
+		
+		?>
+		<?php
+	} //end output_row_hierarchical
+	
+	/**
+	* Output children posts
+	*
+	* @author Ronald Huereca <ronald@metronet.no>
+	* @since Reorder 1.0.1
+	* @access private
+	* @param stdclass $post object to post
+	* @param array $children_pages - array of children 
+	*/
+	private function output_row_children( $children_pages, $all_children ) {
+		foreach( $children_pages as $child ) {
+			$post_id = $child->ID;
+			if ( $post_id == 181 ) {
+			//	die( 'blah' );
+			}
+			if ( isset( $all_children[ $post_id ] ) && !empty( $all_children[ $post_id ] ) ) {
+				$this->output_row_hierarchical( $child, $all_children[ $post_id ], $all_children );
+			} else {
+				$this->output_row( $child );
+			}
+			
+		} //end foreach $child
+	} //end output_row_children
+	
+	
 
 	/**
 	 * HTML output
@@ -238,15 +308,6 @@ class Reorder {
 	 * @global string $post_type
 	 */
 	public function sort_posts() {
-		$posts = new WP_Query(
-			array(
-				'post_type'      => $this->post_type,
-				'posts_per_page' => -1,
-				'orderby'        => 'menu_order',
-				'order'          => $this->order,
-				'post_status'    => $this->post_status,
-			)
-		);
 		?>
 		<style type="text/css">
 		#icon-reorder-posts {
@@ -261,18 +322,58 @@ class Reorder {
 			</h2>
 			<div id="reorder-error"></div>
 			<?php echo $this->initial; ?>
-			<ul id="post-list"><?php
-
-			// Looping through all the posts
-			while ( $posts->have_posts() ) {
-				$posts->the_post();
-				?><li id="<?php the_id(); ?>"><?php the_title(); ?></li><?php
-			}
-			?>
-
-			</ul><?php
-			echo $this->final; ?>
-		</div><?php
-	}
+			<ul id="post-list">
+		<?php
+		if ( is_post_type_hierarchical( $this->post_type ) ) {
+			$pages = get_pages( array( 
+				'sort_column' => 'menu_order',
+				'post_type' => $this->post_type,
+			 ) );
+			 //Get hiearchy of children/parents
+			 $top_level_pages = array();
+			 $children_pages = array();
+			 foreach( $pages as $page ) {
+			 	if ( $page->post_parent == 0 ) {
+			 		//Parent page
+			 		$top_level_pages[] = $page;
+			 	} else {
+			 		$children_pages[ $page->post_parent ][] = $page;
+			 	}
+			 } //end foreach
+			 			 
+			 foreach( $top_level_pages as $page ) {
+			 	$page_id = $page->ID;
+			 	if ( isset( $children_pages[ $page_id ] ) && !empty( $children_pages[ $page_id ] ) ) {
+			 		//If page has children, output page and its children
+			 		$this->output_row_hierarchical( $page, $children_pages[ $page_id ], $children_pages );
+			 	} else {
+			 		$this->output_row( $page );
+			 	}
+			 }			 
+		} else {
+			//Output non hierarchical posts
+			$post_query = new WP_Query(
+				array(
+					'post_type'      => $this->post_type,
+					'posts_per_page' => -1,
+					'orderby'        => 'menu_order',
+					'order'          => $this->order,
+					'post_status'    => $this->post_status,
+				)
+			);
+			$posts = $post_query->get_posts();
+			if ( !$posts ) return;
+			foreach( $posts as $post ) {
+				$this->output_row( $post );
+			} //end foreach
+		}
+		?>
+		</ul>
+		<?php
+		echo $this->final; 
+		?>
+		</div><!-- .wrap -->
+		<?php
+	} //end sort_posts
 
 }
