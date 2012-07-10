@@ -7,7 +7,7 @@ jQuery(document).ready(function($) {
 		handle: 'div',
 		helper:	'clone',
 		items: 'li',
-		maxLevels: 3,
+		maxLevels: 6,
 		opacity: .6,
 		placeholder: 'placeholder',
 		revert: 250,

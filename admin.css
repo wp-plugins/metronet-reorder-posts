@@ -1,7 +1,7 @@
 #post-list {
 	margin-top: 20px;
 }
-#post-list li {
+#post-list div {
 	padding: 10px;
 	width: 50%;
 	font-weight: bold;
@@ -18,7 +18,10 @@
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
 }
-#post-list li img {
+#post-list ul {
+	padding-left: 40px;
+}
+#post-list div img {
 	vertical-align: middle;
 	margin: 0 12px 0 0;
 	border: 2px solid #ddd;
