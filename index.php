@@ -3,7 +3,7 @@
 Plugin Name: Metronet Reorder Posts
 Plugin URI: http://metronet.no/
 Description: Reorder posts
-Version: 1.0.3
+Version: 1.0.4
 Author: Ryan Hellyer / Metronet
 Author URI: http://metronet.no/
 
@@ -49,8 +49,8 @@ require( 'class-reorder.php' );
  * @since 1.0
  * @author Ryan Hellyer <ryan@metronet.no>
  */
-define( 'REORDER_DIR', dirname( __FILE__ ) . '/' ); // Plugin folder DIR
-define( 'REORDER_URL', WP_PLUGIN_URL . '/' . basename( REORDER_DIR )  . '' ); // Plugin folder URL
+define( 'REORDER_DIR', rtrim( plugin_dir_path(__FILE__), '/' ) ); // Plugin folder DIR
+define( 'REORDER_URL', rtrim( plugin_dir_url(__FILE__), '/' ) ); // Plugin folder URL
 
 /**
  * Instantiate admin panel
