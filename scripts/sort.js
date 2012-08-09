@@ -1,13 +1,16 @@
 jQuery(document).ready(function($) {	
 	//Variable sortnonce is declared globally	
 	var postList = $('#post-list');
-	
+	var max_levels = 6;
+	if ( reorder_posts.hierarchical == 'false' ) {
+		max_levels = 1;
+	}
 	postList.nestedSortable( {
 		forcePlaceholderSize: true,
 		handle: 'div',
 		helper:	'clone',
 		items: 'li',
-		maxLevels: 6,
+		maxLevels: max_levels,
 		opacity: .6,
 		placeholder: 'placeholder',
 		revert: 250,

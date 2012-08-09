@@ -208,6 +208,7 @@ class Reorder {
 	public function print_scripts() {
 		global $pagenow, $hook_suffix;
 		$pages = array( 'edit.php' );
+		
 		if ( in_array( $pagenow, $pages ) ) {
 			wp_register_script( 'reorder_nested', REORDER_URL . '/scripts/jquery.mjs.nestedSortable.js', array( 'jquery-ui-sortable' ), '1.3.5', true );
 			wp_enqueue_script( 'reorder_posts', REORDER_URL . '/scripts/sort.js', array( 'reorder_nested' ) );
@@ -215,6 +216,7 @@ class Reorder {
 				'expand' => esc_js( __( 'Expand', 'reorder' ) ),
 				'collapse' => esc_js( __( 'Collapse', 'reorder' ) ),
 				'sortnonce' =>  wp_create_nonce( 'sortnonce' ),
+				'hierarchical' => is_post_type_hierarchical( $this->post_type ) ? 'true' : 'false',
 			) );
 		}
 	}
