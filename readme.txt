@@ -3,8 +3,9 @@ Contributors: ryanhellyer, metronet, ronalfy
 Author URI: http://metronet.no/
 Plugin URL: http://metronet.no/
 Requires at Least: 3.3
+Tested up to: 3.4.1
 Tags: reorder, posts, wordpress, post-type
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 
 A simple and easy way to reorder your custom post-type posts in WordPress.
 
@@ -48,6 +49,10 @@ Probably, but we only support the latest version of WordPress.
 1. Metronet Reorder Posts allows you to easily drag and drop posts to change their order
 
 == Changelog ==
+
+= 1.0.5 =
+* Added expand/collapse section for nested post types
+* Added better page detection for scripts and styles
 
 = 1.0.4 =
 * Added support for hierarchical post types

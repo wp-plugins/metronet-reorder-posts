@@ -3,7 +3,7 @@
 Plugin Name: Metronet Reorder Posts
 Plugin URI: http://metronet.no/
 Description: Reorder posts
-Version: 1.0.4
+Version: 1.0.5
 Author: Ryan Hellyer / Metronet
 Author URI: http://metronet.no/
 
