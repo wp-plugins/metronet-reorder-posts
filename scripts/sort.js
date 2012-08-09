@@ -2,7 +2,7 @@ jQuery(document).ready(function($) {
 	//Variable sortnonce is declared globally	
 	var postList = $('#post-list');
 	
-	var blah = postList.nestedSortable( {
+	postList.nestedSortable( {
 		forcePlaceholderSize: true,
 		handle: 'div',
 		helper:	'clone',
@@ -20,11 +20,20 @@ jQuery(document).ready(function($) {
 			order = JSON.stringify( order , null, 2);
 			//console.log( order ); 
 			//return;
-			$.post( ajaxurl, { action: 'post_sort', nonce: sortnonce, data: order }, function( response ) {
+			$.post( ajaxurl, { action: 'post_sort', nonce: reorder_posts.sortnonce, data: order }, function( response ) {
 			}, 'json' );
 			
 		}
 	});
+	$( "#post-list a" ).toggle( function() {
+		$( this ).html( reorder_posts.collapse );
+		$( this ).parent().next( '.children' ).slideDown( "slow" );
+		return false;
+	}, function() {
+		$( this ).html( reorder_posts.expand );
+		$( this ).parent().next( '.children' ).slideUp( "slow" );
+		return false;
+	} );
 	
 	/*
 

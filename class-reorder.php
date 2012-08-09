@@ -29,6 +29,13 @@ class Reorder {
 	 * @access private
 	 */
 	private $post_type;
+	
+	/**
+	 * @var $page_hook
+	 * @desc Page hook to add reorder scripts/styles to
+	 * @access private
+	 */
+	private $page_hook;
 
 	/**
 	 * @var $direction 
@@ -112,25 +119,13 @@ class Reorder {
 		$this->menu_label  = $menu_label;
 		$this->icon        = $icon;
 		$this->post_status = $post_status;
-
+		$this->page_hook = $post_type . '_page_reorder-video';
+		
 		// Add actions
 		add_action( 'wp_ajax_post_sort',   array( $this, 'ajax_save_post_order'  ) );
-		add_action( 'admin_print_styles',  array( $this, 'print_styles'     ) );
-		add_action( 'admin_print_scripts', array( $this, 'print_scripts'    ) );
 		add_action( 'admin_menu',          array( $this, 'enable_post_sort' ), 10, 'page' );
-		add_action( 'admin_print_styles',  array( $this, 'create_nonce'     ) );
 	}
 
-	/**
-	 * Creating the nonce value used within sort.js
-	 *
-	 * @author Ryan Hellyer <ryan@metronet.no>
-	 * @since Reorder 1.0
-	 * @access public
-	 */
-	public function create_nonce() {
-		echo "<script>var sortnonce = '" .  wp_create_nonce( 'sortnonce' ) . "';</script>";
-	}
 
 	/**
 	 * Saving the post oder for later use
@@ -211,12 +206,16 @@ class Reorder {
 	 * @global string $pagenow Used internally by WordPress to designate what the current page is in the admin panel
 	 */
 	public function print_scripts() {
-		global $pagenow;
-
+		global $pagenow, $hook_suffix;
 		$pages = array( 'edit.php' );
 		if ( in_array( $pagenow, $pages ) ) {
 			wp_register_script( 'reorder_nested', REORDER_URL . '/scripts/jquery.mjs.nestedSortable.js', array( 'jquery-ui-sortable' ), '1.3.5', true );
 			wp_enqueue_script( 'reorder_posts', REORDER_URL . '/scripts/sort.js', array( 'reorder_nested' ) );
+			wp_localize_script( 'reorder_posts', 'reorder_posts', array(
+				'expand' => esc_js( __( 'Expand', 'reorder' ) ),
+				'collapse' => esc_js( __( 'Collapse', 'reorder' ) ),
+				'sortnonce' =>  wp_create_nonce( 'sortnonce' ),
+			) );
 		}
 	}
 
@@ -230,7 +229,8 @@ class Reorder {
 	public function enable_post_sort() {
 		$post_type = $this->post_type;
 		if ( 'post' != $post_type ) {
-			add_submenu_page(
+		
+			$hook = add_submenu_page(
 				'edit.php?post_type=' . $post_type, // Parent slug
 				$this->heading,                     // Page title (unneeded since specified directly)
 				$this->menu_label,                  // Menu title
@@ -240,7 +240,7 @@ class Reorder {
 			);
 		}
 		else {
-			add_posts_page(
+			$hook = add_posts_page(
 				$this->heading,                     // Page title (unneeded since specified directly)
 				$this->menu_label,                  // Menu title
 				'edit_posts',                       // Capability
@@ -248,6 +248,8 @@ class Reorder {
 				array( $this, 'sort_posts' )        // Callback function
 			);
 		}
+		add_action( 'admin_print_styles-' . $hook,  array( $this, 'print_styles'     ) );
+		add_action( 'admin_print_scripts-' . $hook, array( $this, 'print_scripts'    ) );
 	}
 	
 	/**
@@ -284,7 +286,7 @@ class Reorder {
 		setup_postdata( $post );
 		?>
 		<li id="list_<?php the_id(); ?>">
-			<div><?php the_title(); ?></div>
+			<div><?php the_title(); ?> <a href='#' style="float: right"><?php esc_html_e( 'Expand', 'reorder' ); ?></a></div>
 			<ul class='children'>
 			<?php $this->output_row_children( $post_children, $all_children ); ?>
 			</ul>

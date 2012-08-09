@@ -35,3 +35,6 @@
 #loading-animation {
 	display: none;
 }
+#post-list .children {
+	display: none;
+}
