@@ -3,7 +3,7 @@
 Plugin Name: Metronet Reorder Posts
 Plugin URI: http://metronet.no/
 Description: Reorder posts
-Version: 1.0.5
+Version: 1.0.6
 Author: Ryan Hellyer / Metronet
 Author URI: http://metronet.no/
 
@@ -61,9 +61,13 @@ define( 'REORDER_URL', rtrim( plugin_dir_url(__FILE__), '/' ) ); // Plugin folde
  */
 add_action( 'wp_loaded', 'mn_reorder_posts_init', 100 ); //Load low priority in init for other plugins to generate their post types
 function mn_reorder_posts_init() {
-	$post_types = get_post_types( '','names' ); 
+	$post_types = get_post_types( '','names' );
+	
+	// Add filter to allow users to control which post-types the plugin is used with via their theme
+	$post_types = apply_filters( 'metronet_reorder_post_types', $post_types );
+		
 	foreach ( $post_types as $post_type ) {
-
+		
 		// Instantiate new reordering
 		new Reorder(
 			array(
