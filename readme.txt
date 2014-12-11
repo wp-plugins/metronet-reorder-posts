@@ -3,7 +3,8 @@ Contributors: ryanhellyer, metronet, ronalfy
 Author URI: http://metronet.no/
 Plugin URL: http://metronet.no/
 Requires at Least: 3.3
-Tags: reorder, posts, wordpress, post-type
+Tested up to: 4.0
+Tags: reorder, re-order, posts, wordpress, post-type, ajax, admin, hierarchical, menu_order, ordering
 Stable tag: 1.0.6
 
 A simple and easy way to reorder your custom post-type posts in WordPress.
@@ -29,7 +30,7 @@ There is no settings page per se. The plugin adds an ordering page as a submenu 
 
 = Where is the "save" button? =
 
-There isn't one. The changes are saved automatically .
+There isn't one. The changes are saved automatically.
 
 = Can I use this on a single post type? =
 
@@ -60,22 +61,28 @@ Probably, but we only support the latest version of WordPress.
 == Changelog ==
 
 = 1.0.6 =
+* Updated 2014-12-11 - Ensuring WordPress 4.1 compatibility
+* Released 2013-07-19
 * Added new filter for editing the post-types supported
 * Thanks to mathielo for the suggestion and code contribution.
 
 = 1.0.5 =
+* Released 2012-08-09
 * Added expand/collapse section for nested post types
 * Added better page detection for scripts and styles
 
 = 1.0.4 =
+* Released 2012-07-11
 * Added support for hierarchical post types
 
 = 1.0.3 =
+* Released 2012-05-09
 * Updated screenshot
 * Corrected function prefix
 * Additional: changed readme.txt (didn't bump version number)
 
 = 1.0.2 =
+* Released 2012-05-09
 * Added ability to post type of posts to be reordered
 * Fixed bug in initial order
 

@@ -1,15 +1,13 @@
 <?php
 /*
 Plugin Name: Metronet Reorder Posts
-Plugin URI: http://metronet.no/
+Plugin URI: https://wordpress.org/plugins/metronet-reorder-posts/
 Description: Reorder posts
 Version: 1.0.6
-Author: Ryan Hellyer / Metronet
-Author URI: http://metronet.no/
+Author: Ryan Hellyer
+Author URI: http://geek.ryanhellyer.net/
 
 ------------------------------------------------------------------------
-Copyright Metronet AS
-
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
