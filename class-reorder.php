@@ -78,13 +78,6 @@ class Reorder {
 	 * @access private
 	 */
 	private $menu_label;
-	
-	/**
-	 * @var $icon
-	 * @desc Admin page icon
-	 * @access private
-	 */
-	private $icon;
 
 	/**
 	 * Class constructor
@@ -103,7 +96,7 @@ class Reorder {
 		$defaults = array(
 			'post_type'   => 'post',                     // Setting the post type to be reordered
 			'order'       => 'ASC',                      // Setting the order of the posts
-			'heading'     => __( 'Reorder', 'reorder' ), // Default text for heading
+			'heading'     => __( 'Reorder', 'metronet-reorder-posts' ), // Default text for heading
 			'initial'     => '',                         // Initial text displayed before sorting code
 			'final'       => '',                         // Initial text displayed before sorting code
 			'post_status' => 'publish',                  // Post status of posts to be reordered
@@ -117,7 +110,6 @@ class Reorder {
 		$this->initial     = $initial;
 		$this->final       = $final;
 		$this->menu_label  = $menu_label;
-		$this->icon        = $icon;
 		$this->post_status = $post_status;
 		$this->page_hook = $post_type . '_page_reorder-video';
 		
@@ -147,7 +139,7 @@ class Reorder {
 		//Iterate through post data
 		$this->update_posts( $post_data, 0 );
 		
-		die( json_encode( array( 'success' => 'yo' ) ) );
+		die( json_encode( array( 'success' => 'true' ) ) );
 	} //end ajax_save_post_order
 	
 	/**
@@ -193,7 +185,7 @@ class Reorder {
 		$pages = array( 'edit.php' );
 
 		if ( in_array( $pagenow, $pages ) )
-			wp_enqueue_style( 'reorderpages_style', REORDER_URL . '/admin.css' );
+			wp_enqueue_style( 'reorderpages_style', REORDER_URL . '/css/admin.css' );
 
 	}
 
@@ -288,7 +280,7 @@ class Reorder {
 		setup_postdata( $post );
 		?>
 		<li id="list_<?php the_id(); ?>">
-			<div><?php the_title(); ?> <a href='#' style="float: right"><?php esc_html_e( 'Expand', 'reorder' ); ?></a></div>
+			<div><?php the_title(); ?> <a href='#' style="float: right"><?php esc_html_e( 'Expand', 'metronet-reorder-posts' ); ?></a></div>
 			<ul class='children'>
 			<?php $this->output_row_children( $post_children, $all_children ); ?>
 			</ul>
@@ -332,13 +324,8 @@ class Reorder {
 	 */
 	public function sort_posts() {
 		?>
-		<style type="text/css">
-		#icon-reorder-posts {
-			background:url(<?php echo $this->icon; ?>) no-repeat;
-		}
 		</style>
 		<div class="wrap">
-			<?php screen_icon( 'reorder-posts' ); ?>
 			<h2>
 				<?php echo $this->heading; ?>
 				<img src="<?php echo admin_url( 'images/loading.gif' ); ?>" id="loading-animation" />
