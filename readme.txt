@@ -1,11 +1,11 @@
 === Reorder Posts ===
-Contributors: ryanhellyer, metronet, ronalfy
-Author URI: https://hellyer.kiwi/
+Contributors: ryanhellyer, metronet, ronalfy, scottbasgaard
+Author URI: https://github.com/ronalfy/reorder-posts
 Plugin URL: https://wordpress.org/plugins/metronet-reorder-posts/
 Requires at Least: 3.7
 Tested up to: 4.1
 Tags: reorder, re-order, posts, wordpress, post-type, ajax, admin, hierarchical, menu_order, ordering
-Stable tag: 2.0.0
+Stable tag: 2.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,7 +46,7 @@ Please feel free to leave a support request here or create an <a href="https://g
 <h3>Credits</h3>
 This plugin was originally developed for <a href="https://metronet.no/">Metronet AS in Norway</a>.
 
-The plugin is now independently developed by <a href="https://hellyer.kiwi/">Ryan Hellyer</a> and <a href="http://www.ronalfy.com">Ronald Huereca</a>.
+The plugin is now independently developed by <a href="https://geek.hellyer.kiwi/">Ryan Hellyer</a>, <a href="http://www.ronalfy.com">Ronald Huereca</a> and <a href="http://scottbasgaard.com/">Scott Basgaard</a>.
 
 Banner image courtesy of <a href="https://www.flickr.com/photos/pagedooley">Kevin Dooley</a>.
 
@@ -106,6 +106,13 @@ This plugin requires WordPress 3.7 or above.  We urge you, however, to always us
 
 == Changelog ==
 
+= 2.0.1 =
+* Altered contributor documentation.
+* Adding filters for determining where the Reorder sub-menu will show up.
+* Sub-menu headings now reflect the post type that is being re-ordered.
+* Fixed bug in display when there are no post types to re-order.
+* Changed class names to be more unique.
+
 = 2.0.0 =
 * Released 2014-12-12 
 * Added settings panel for enabling/disabling the Reorder plugin for post types.
@@ -147,6 +154,9 @@ This plugin requires WordPress 3.7 or above.  We urge you, however, to always us
 * Initial plugin release
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Filter additions, and several bug fixes.
 
 = 2.0.0 =
 New admin panel settings for setting Reorder for post types, and advanced options for modifying the menu order of post type queries.

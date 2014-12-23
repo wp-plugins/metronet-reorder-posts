@@ -3,9 +3,9 @@
 Plugin Name: Metronet Reorder Posts
 Plugin URI: https://wordpress.org/plugins/metronet-reorder-posts/
 Description: Reorder posts
-Version: 2.0.0
-Author: Ryan Hellyer, Ronald Huereca
-Author URI: http://geek.ryanhellyer.net/
+Version: 2.0.1
+Author: Ryan Hellyer, Ronald Huereca, Scott Basgaard
+Author URI: https://github.com/ronalfy/reorder-posts
 Text Domain: metronet-reorder-posts
 Domain Path: /languages
 
@@ -76,16 +76,20 @@ function mn_reorder_posts_init() {
 	}
 	
 	// Add filter to allow users to control which post-types the plugin is used with via their theme
-	$post_types = apply_filters( 'metronet_reorder_post_types', $post_types );
+	$post_types = array_unique( apply_filters( 'metronet_reorder_post_types', $post_types ) );
 		
 	foreach ( $post_types as $post_type ) {
+		//Generate heading
+		$post_type_object = get_post_type_object( $post_type );
+		$post_type_label = isset( $post_type_object->label ) ? $post_type_object->label : __( 'Posts', 'metronet-reorder-posts' );
+		$heading = sprintf( __( 'Reorder %s', 'metronet-reorder-posts' ), $post_type_label );
 		
 		// Instantiate new reordering
-		new Reorder(
+		new MN_Reorder(
 			array(
 				'post_type'   => $post_type,
 				'order'       => 'ASC',
-				'heading'     => __( 'Reorder Posts', 'metronet-reorder-posts' ),
+				'heading'     => $heading,
 				'final'       => '',
 				'initial'     => '',
 				'menu_label'  => __( 'Reorder', 'metronet-reorder-posts' ),

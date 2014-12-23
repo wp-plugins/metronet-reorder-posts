@@ -14,14 +14,14 @@
  * Based on work by Scott Basgaard and Ronald Huereca
  * 
  * To use this class, simply instantiate it using an argument to set the post type as follows:
- * new Reorder( array( 'post_type' => 'post', 'order'=> 'ASC' ) );
+ * new MN_Reorder( array( 'post_type' => 'post', 'order'=> 'ASC' ) );
  * 
  * @copyright Copyright (c), Metronet
  * @license http://www.gnu.org/licenses/gpl.html GPL
  * @author Ryan Hellyer <ryan@metronet.no>
  * @since 1.0
  */
-class Reorder {
+class MN_Reorder {
 
 	/**
 	 * @var $post_type 
@@ -29,13 +29,6 @@ class Reorder {
 	 * @access private
 	 */
 	private $post_type;
-	
-	/**
-	 * @var $page_hook
-	 * @desc Page hook to add reorder scripts/styles to
-	 * @access private
-	 */
-	private $page_hook;
 
 	/**
 	 * @var $direction 
@@ -100,18 +93,18 @@ class Reorder {
 			'initial'     => '',                         // Initial text displayed before sorting code
 			'final'       => '',                         // Initial text displayed before sorting code
 			'post_status' => 'publish',                  // Post status of posts to be reordered
+			'menu_label'  => __( 'Reorder', 'metronet-reorder-posts' ), //Menu label for the post type
 		);
-		extract( wp_parse_args( $args, $defaults ) );
+		$args = wp_parse_args( $args, $defaults );
 
 		// Set variables
-		$this->post_type   = $post_type;
-		$this->order       = $order;
-		$this->heading     = $heading;
-		$this->initial     = $initial;
-		$this->final       = $final;
-		$this->menu_label  = $menu_label;
-		$this->post_status = $post_status;
-		$this->page_hook = $post_type . '_page_reorder-video';
+		$this->post_type   = $args[ 'post_type' ];
+		$this->order       = $args[ 'order' ];;
+		$this->heading     = $args[ 'heading' ];
+		$this->initial     = $args[ 'initial' ];
+		$this->final       = $args[ 'final' ];
+		$this->menu_label  = $args[ 'menu_label' ];
+		$this->post_status = $args[ 'post_status' ];
 		
 		// Add actions
 		add_action( 'wp_ajax_post_sort',   array( $this, 'ajax_save_post_order'  ) );
@@ -223,11 +216,11 @@ class Reorder {
 	public function enable_post_sort() {
 		$post_type = $this->post_type;
 		if ( 'post' != $post_type ) {
-		
+			$menu_location = apply_filters( 'metronet_reorder_menu_location_' . $post_type, 'edit.php?post_type=' . $post_type, $post_type );
 			$hook = add_submenu_page(
-				'edit.php?post_type=' . $post_type, // Parent slug
+				$menu_location, // Parent slug
 				$this->heading,                     // Page title (unneeded since specified directly)
-				$this->menu_label,                  // Menu title
+				apply_filters( 'metronet_reorder_menu_label_' . $post_type, $this->menu_label , $post_type ),                  // Menu title
 				'edit_posts',                       // Capability
 				'reorder-' . $post_type,            // Menu slug
 				array( $this, 'sort_posts' )        // Callback function
@@ -236,7 +229,7 @@ class Reorder {
 		else {
 			$hook = add_posts_page(
 				$this->heading,                     // Page title (unneeded since specified directly)
-				$this->menu_label,                  // Menu title
+				apply_filters( 'metronet_reorder_menu_label_' . $post_type, $this->menu_label ),                  // Menu title
 				'edit_posts',                       // Capability
 				'reorder-posts',                    // Menu slug
 				array( $this, 'sort_posts' )        // Callback function
@@ -323,43 +316,48 @@ class Reorder {
 	 * @global string $post_type
 	 */
 	public function sort_posts() {
+		$has_posts = false;
 		?>
 		</style>
 		<div class="wrap">
 			<h2>
-				<?php echo $this->heading; ?>
-				<img src="<?php echo admin_url( 'images/loading.gif' ); ?>" id="loading-animation" />
+				<?php echo esc_html( $this->heading ); ?>
+				<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" id="loading-animation" />
 			</h2>
 			<div id="reorder-error"></div>
-			<?php echo $this->initial; ?>
-			<ul id="post-list">
+			<?php echo esc_html( $this->initial ); ?>
 		<?php
 		if ( is_post_type_hierarchical( $this->post_type ) ) {
 			$pages = get_pages( array( 
 				'sort_column' => 'menu_order',
 				'post_type' => $this->post_type,
-			 ) );
-			 //Get hiearchy of children/parents
-			 $top_level_pages = array();
-			 $children_pages = array();
-			 foreach( $pages as $page ) {
-			 	if ( $page->post_parent == 0 ) {
-			 		//Parent page
-			 		$top_level_pages[] = $page;
-			 	} else {
-			 		$children_pages[ $page->post_parent ][] = $page;
-			 	}
-			 } //end foreach
-			 			 
-			 foreach( $top_level_pages as $page ) {
-			 	$page_id = $page->ID;
-			 	if ( isset( $children_pages[ $page_id ] ) && !empty( $children_pages[ $page_id ] ) ) {
-			 		//If page has children, output page and its children
-			 		$this->output_row_hierarchical( $page, $children_pages[ $page_id ], $children_pages );
-			 	} else {
-			 		$this->output_row( $page );
-			 	}
-			 }			 
+			) );
+			if( $pages ) {
+				$has_posts = true;
+				echo '<ul id="post-list">';
+				//Get hiearchy of children/parents
+				$top_level_pages = array();
+				$children_pages = array();
+				foreach( $pages as $page ) {
+					if ( $page->post_parent == 0 ) {
+						//Parent page
+						$top_level_pages[] = $page;
+					} else {
+						$children_pages[ $page->post_parent ][] = $page;
+					}
+				} //end foreach
+							 
+				foreach( $top_level_pages as $page ) {
+					$page_id = $page->ID;
+					if ( isset( $children_pages[ $page_id ] ) && !empty( $children_pages[ $page_id ] ) ) {
+						//If page has children, output page and its children
+						$this->output_row_hierarchical( $page, $children_pages[ $page_id ], $children_pages );
+					} else {
+						$this->output_row( $page );
+					}
+				}
+				echo '</ul>';	 
+			}		 
 		} else {
 			//Output non hierarchical posts
 			$post_query = new WP_Query(
@@ -372,15 +370,19 @@ class Reorder {
 				)
 			);
 			$posts = $post_query->get_posts();
-			if ( !$posts ) return;
-			foreach( $posts as $post ) {
-				$this->output_row( $post );
-			} //end foreach
+			if( $posts && !empty( $posts ) ) {
+				$has_posts = true;
+				echo '<ul id="post-list">';
+				foreach( $posts as $post ) {
+					$this->output_row( $post );
+				} //end foreach
+				echo '</ul>';
+			}
 		}
-		?>
-		</ul>
-		<?php
-		echo $this->final; 
+		if ( false === $has_posts ) {
+			echo sprintf( '<h3>%s</h3>	', esc_html__( 'There is nothing to sort at this time', 'metronet-reorder-posts' ) );
+		}
+		echo esc_html( $this->final ); 
 		?>
 		</div><!-- .wrap -->
 		<?php
