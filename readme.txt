@@ -5,17 +5,17 @@ Plugin URL: https://wordpress.org/plugins/metronet-reorder-posts/
 Requires at Least: 3.7
 Tested up to: 4.1
 Tags: reorder, re-order, posts, wordpress, post-type, ajax, admin, hierarchical, menu_order, ordering
-Stable tag: 2.0.2
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Stable tag: 2.1.0
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
-A simple and easy way to reorder your custom post-type posts in WordPress.
+A simple and easy way to reorder your custom post types in WordPress.
 
 == Description ==
 
-A simple and easy way to reorder your custom post-type posts in WordPress. Adds drag and drop functionality for post ordering in the WordPress admin panel. Works with custom post-types and regular posts.
+A simple and easy way to reorder your custom post-type posts in WordPress. Adds drag and drop functionality for post ordering in the WordPress admin panel. Works with custom post-types and regular posts.  
 
-A settings panel is available for determining which post types to enable ordering for.  Advanced options allow you to change the menu order for post types.
+We consider Reorder Posts a <strong>developer tool</strong>. If you do not know what `menu_order` or custom queries are, then this plugin is likely not for you.
 
 <h3>Features</h3>
 <ul>
@@ -27,7 +27,7 @@ A settings panel is available for determining which post types to enable orderin
 <li>Advanced settings panel for overriding the menu order of custom post type queries</li>
 </ul>
 
-Advanced customization is allowed via hooks.  See the <a  href="https://github.com/ronalfy/reorder-posts#plugin-filters">Plugin Filters on GitHub</a>.
+
 
 <h3>Spread the Word</h3>
 If you like this plugin, please help spread the word.  Rate the plugin.  Write about the plugin.  Something :)
@@ -59,7 +59,17 @@ Either install the plugin via the WordPress admin panel, or ...
 
 For each post type, you will see a new "Reorder" submenu.  Simply navigate to "Reorder" to change the order of your post types. Changes are saved immediately, there is no need to click a save or update button.  
 
-By default, ordering is enabled for all post types.  A settings panel is available for determining which post types to enable ordering for.  Advanced options allow you to change the menu order for post types.
+By default, ordering is enabled for all post types.  A settings panel is available for determining which post types to enable ordering for.  
+
+Advanced customization is allowed via hooks.  See the <a  href="https://github.com/ronalfy/reorder-posts#plugin-filters">Plugin Filters on GitHub</a>.
+
+This tool allows you to easily reorder post types in the back-end of WordPress. How the posts are sorted in the front-end is entirely up to you, as it should be.
+
+We do have advanced settings under `Settings->Reorder Posts`, but these should only be used for testing purposes.
+
+You'll want to make use of <a href="http://codex.wordpress.org/Class_Reference/WP_Query">WP_Query</a>, <a href="http://codex.wordpress.org/Template_Tags/get_posts">get_posts</a>, or <a href="http://codex.wordpress.org/Plugin_API/Action_Reference/pre_get_posts">pre_get_posts</a> to modify query behavior on the front-end of your site.
+
+Examples of each are on the respective pages above.  You are welcome to leave a support request if you need help with a query and we'll do our best to get back with you.
 
 == Frequently Asked Questions ==
 
@@ -105,6 +115,14 @@ This plugin requires WordPress 3.7 or above.  We urge you, however, to always us
 2.  Admin panel settings
 
 == Changelog ==
+
+= 2.1.0 =
+* Released 2015-01-19
+* Added add-on support
+* Make sure reordering can only be done by those with edit_pages privileges
+* Added pagination for performance reasons
+* Optimized queries for performance reasons
+* Added warning message for those with a lot of posts
 
 = 2.0.2 =
 * Released 2014-12-26
@@ -160,6 +178,9 @@ This plugin requires WordPress 3.7 or above.  We urge you, however, to always us
 * Initial plugin release
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Some capability fixes, pagination for post types with a lot of posts, improved query performance, and add-on capability.
 
 = 2.0.2 =
 Bug fixes with PHP error notices.  Highly recommend you upgrade.

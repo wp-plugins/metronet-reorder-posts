@@ -21,7 +21,7 @@
  * @author Ryan Hellyer <ryan@metronet.no>
  * @since 1.0
  */
-class MN_Reorder {
+final class MN_Reorder {
 
 	/**
 	 * @var $post_type 
@@ -29,13 +29,20 @@ class MN_Reorder {
 	 * @access private
 	 */
 	private $post_type;
-
+	
 	/**
-	 * @var $direction 
-	 * @desc ASC or DESC
+	 * @var $posts_per_page 
+	 * @desc How many posts to show
 	 * @access private
 	 */
-	private $direction;
+	private $posts_per_page;
+	
+	/**
+	 * @var $offset 
+	 * @desc How many posts to offset by
+	 * @access private
+	 */
+	private $offset;
 
 	/**
 	 * @var $heading 
@@ -71,7 +78,69 @@ class MN_Reorder {
 	 * @access private
 	 */
 	private $menu_label;
-
+	
+	/**
+	 * @var $order 
+	 * @desc ASC or DESC
+	 * @access private
+	 */
+	private $order;
+	
+	/**
+	 * @var $reorder_page 
+	 * @desc Where the reorder interface is being added
+	 * @access private
+	 */
+	private $reorder_page = '';
+	
+	/**
+	 * Get method for post status
+	 *
+	 * @author Ronald Huereca <ronald@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @returns string $post_status Post Status of Posts
+	 */
+	public function get_post_status() {
+		return $this->post_status;	
+	}
+	
+	/**
+	 * Get method for post order
+	 *
+	 * @author Ronald Huereca <ronald@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @returns string $order Order of posts (ASC or DESC)
+	 */
+	public function get_post_order() {
+		return $this->order;	
+	}
+	
+	/**
+	 * Get method for posts per page
+	 *
+	 * @author Ronald Huereca <ronald@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @returns int $posts_per_page How many posts to display
+	 */
+	public function get_posts_per_page() {
+		return $this->posts_per_page;	
+	}
+	
+	/**
+	 * Get method for post offset used in pagination
+	 *
+	 * @author Ronald Huereca <ronald@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @returns int $offset Offset of posts
+	 */
+	public function get_offset() {
+		return $this->offset;	
+	}
+	
 	/**
 	 * Class constructor
 	 * 
@@ -94,6 +163,8 @@ class MN_Reorder {
 			'final'       => '',                         // Initial text displayed before sorting code
 			'post_status' => 'publish',                  // Post status of posts to be reordered
 			'menu_label'  => __( 'Reorder', 'metronet-reorder-posts' ), //Menu label for the post type
+			'offset' => 48,
+			'posts_per_page' => 50
 		);
 		$args = wp_parse_args( $args, $defaults );
 
@@ -106,63 +177,119 @@ class MN_Reorder {
 		$this->menu_label  = $args[ 'menu_label' ];
 		$this->post_status = $args[ 'post_status' ];
 		
+		//Get offset and posts_per_page
+		$this->posts_per_page = absint( $args[ 'posts_per_page' ] ); //todo - filterable?
+		$this->offset = absint( $args[ 'offset' ] ); //todo - filterable?
+		if ( $this->offset > $this->posts_per_page ) {
+			$this->offset = $this->posts_per_page;	
+		}
+		
 		// Add actions
 		add_action( 'wp_ajax_post_sort',   array( $this, 'ajax_save_post_order'  ) );
 		add_action( 'admin_menu',          array( $this, 'enable_post_sort' ), 10, 'page' );
+		add_action( 'metronet_reorder_posts_interface_' . $this->post_type, array( $this, 'output_interface' ) );
 	}
-
+	/**
+	 * Adjust the found posts for the offset
+	 *
+	 * @author Ronald Huereca <ronald@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @returns int $found_posts Number of posts
+	 */
+	public function adjust_offset_pagination( $found_posts, $query ) {
+		//This sometimes will have a bug of showing an extra page, but it doesn't break anything, so leaving it for now.
+		if( $found_posts > $this->posts_per_page ) {
+			$num_pages = round($found_posts / $this->offset);
+			$found_posts = (string)round( $num_pages * $this->posts_per_page );
+		}
+		return $found_posts;
+	}
 
 	/**
 	 * Saving the post oder for later use
 	 *
-	 * @author Ryan Hellyer <ryan@metronet.no> and Ronald Huereca <ronald@metronet.no>
+	 * @author Ronald Huereca <ronalfy@gmail.com>
 	 * @since Reorder 1.0
 	 * @access public
 	 * @global object $wpdb  The primary global database object used internally by WordPress
 	 */
 	public function ajax_save_post_order() {
 		global $wpdb;
-
+		
+		if ( !current_user_can( 'edit_pages' ) ) die( '' );
 		// Verify nonce value, for security purposes
 		if ( !wp_verify_nonce( $_POST['nonce'], 'sortnonce' ) ) die( '' );
 		
-		//Get JSON data
-		$post_data = json_decode( str_replace( "\\", '', $_POST[ 'data' ] ) );
+		//Get Ajax Vars
+		$post_parent = isset( $_POST[ 'post_parent' ] ) ? absint( $_POST[ 'post_parent' ] ) : 0;
+		$menu_order_start = isset( $_POST[ 'start' ] ) ? absint( $_POST[ 'start' ] ) : 0;
+		$post_id = isset( $_POST[ 'post_id' ] ) ? absint( $_POST[ 'post_id' ] ) : 0;
+		$post_menu_order = isset( $_POST[ 'menu_order' ] ) ? absint( $_POST[ 'menu_order' ] ) : 0;
+		$posts_to_exclude = isset( $_POST[ 'excluded' ] ) ? array_filter( $_POST[ 'excluded' ], 'absint' ) : array();
+		$post_type = isset( $_POST[ 'post_type' ] ) ? sanitize_text_field( $_POST[ 'post_type' ] ) : false;
 		
-		//Iterate through post data
-		$this->update_posts( $post_data, 0 );
+		if ( !$post_type ) die( '' );
 		
-		die( json_encode( array( 'success' => 'true' ) ) );
-	} //end ajax_save_post_order
-	
-	/**
-	 * Saving the post order recursively	 
-	 *
-	 * @author Ronald Huereca <ronald@metronet.no>
-	 * @since Reorder 1.0
-	 * @access public
-	 * @global object $wpdb  The primary global database object used internally by WordPress
-	 */
-	private function update_posts( $post_data, $parent_id ) {
-		global $wpdb;
-		$count = 0;
+		//Performance
+		remove_action( 'pre_post_update', 'wp_save_post_revision' );
 		
-		foreach( $post_data as $post_obj ) {
-			$post_id = absint( $post_obj->id );
-			$children = isset( $post_obj->children ) ? $post_obj->children : false;
-			if ( $children ) 
-				$this->update_posts( $children, $post_id );
+		//Build Initial Return 
+		$return = array();
+		$return[ 'more_posts' ] = false;
+		$return[ 'action' ] = 'post_sort';
+		$return[ 'post_parent' ] = $post_parent;
+		$return[ 'nonce' ] = sanitize_text_field( $_POST[ 'nonce' ] );
+		$return[ 'post_id'] = $post_id;
+		$return[ 'menu_order' ] = $post_menu_order;
+		$return[ 'post_type' ] = $post_type;
+		
+		//Update post if passed - Should run only on beginning of first iteration
+		if( $post_id > 0 && !isset( $_POST[ 'more_posts' ] ) ) {
+			wp_update_post( array( 'ID' => $post_id, 'post_parent' => $post_parent, 'menu_order' => $post_menu_order ) );	
+			$posts_to_exclude[] = $post_id;
+		}
+		
+		//Build Query
+		$query_args = array(
+			'post_type' => $post_type,
+			'orderby' => 'menu_order title',
+			'order' => $this->order,
+			'posts_per_page' => 50,
+			'suppress_filters' => true,
+			'ignore_sticky_posts' => true,
+			'post_status' => $this->post_status,
+			'post_parent' => $post_parent,
+			'post__not_in' => $posts_to_exclude
+		);
+		$posts = new WP_Query( $query_args );
+		$start = $menu_order_start;
+		if ( $posts->have_posts() ) {
+			foreach( $posts->posts as $post ) {
+				//Increment start if matches menu_order and there is a post to change
+				if ( $start == $post_menu_order && $post_id > 0 ) {
+					$start++;	
+				}
 				
-			//Update the posts
-			$wpdb->update(
-				$wpdb->posts,
-				array( 'menu_order' => $count, 'post_parent' => $parent_id ),
-				array( 'ID'         => $post_id )
-			);
-			$count += 1;
-			
-		} //end foreach $post_data
-	} //end update_posts
+				if ( $post_id != $post->ID ) {
+					//Update post and counts
+					wp_update_post( array( 'ID' => $post->ID, 'menu_order' => $start, 'post_parent' => $post_parent ) );
+				}
+				$posts_to_exclude[] = $post->ID;
+				$start++;
+			}
+			$return[ 'excluded' ] = $posts_to_exclude;
+			$return[ 'start' ] = $start;
+			if ( $posts->max_num_pages > 1 ) {
+				$return[ 'more_posts' ] = true;	
+			} else {
+				$return[ 'more_posts' ] = false;	
+			}
+			die( json_encode( $return ) );
+		} else {
+			die( json_encode( $return ) );
+		}
+	} //end ajax_save_post_order
 
 	/**
 	 * Print styles to admin page
@@ -173,13 +300,7 @@ class MN_Reorder {
 	 * @global string $pagenow Used internally by WordPress to designate what the current page is in the admin panel
 	 */
 	public function print_styles() {
-		global $pagenow;
-
-		$pages = array( 'edit.php' );
-
-		if ( in_array( $pagenow, $pages ) )
-			wp_enqueue_style( 'reorderpages_style', REORDER_URL . '/css/admin.css' );
-
+		wp_enqueue_style( 'reorderpages_style', REORDER_URL . '/css/admin.css' );
 	}
 
 	/**
@@ -191,19 +312,15 @@ class MN_Reorder {
 	 * @global string $pagenow Used internally by WordPress to designate what the current page is in the admin panel
 	 */
 	public function print_scripts() {
-		global $pagenow, $hook_suffix;
-		$pages = array( 'edit.php' );
-		
-		if ( in_array( $pagenow, $pages ) ) {
-			wp_register_script( 'reorder_nested', REORDER_URL . '/scripts/jquery.mjs.nestedSortable.js', array( 'jquery-ui-sortable' ), '1.3.5', true );
-			wp_enqueue_script( 'reorder_posts', REORDER_URL . '/scripts/sort.js', array( 'reorder_nested' ) );
-			wp_localize_script( 'reorder_posts', 'reorder_posts', array(
-				'expand' => esc_js( __( 'Expand', 'reorder' ) ),
-				'collapse' => esc_js( __( 'Collapse', 'reorder' ) ),
-				'sortnonce' =>  wp_create_nonce( 'sortnonce' ),
-				'hierarchical' => is_post_type_hierarchical( $this->post_type ) ? 'true' : 'false',
-			) );
-		}
+		wp_register_script( 'reorder_nested', REORDER_URL . '/scripts/jquery.mjs.nestedSortable.js', array( 'jquery-ui-sortable' ), '1.3.5', true );
+		wp_enqueue_script( 'reorder_posts', REORDER_URL . '/scripts/sort.js', array( 'reorder_nested' ) );
+		wp_localize_script( 'reorder_posts', 'reorder_posts', array(
+			'action' => 'post_sort',
+			'expand' => esc_js( __( 'Expand', 'metronet-reorder-posts' ) ),
+			'collapse' => esc_js( __( 'Collapse', 'metronet-reorder-posts' ) ),
+			'sortnonce' =>  wp_create_nonce( 'sortnonce' ),
+			'hierarchical' => is_post_type_hierarchical( $this->post_type ) ? 'true' : 'false',
+		) );
 	}
 
 	/**
@@ -221,169 +338,203 @@ class MN_Reorder {
 				$menu_location, // Parent slug
 				$this->heading,                     // Page title (unneeded since specified directly)
 				apply_filters( 'metronet_reorder_menu_label_' . $post_type, $this->menu_label , $post_type ),                  // Menu title
-				'edit_posts',                       // Capability
+				'edit_pages',                       // Capability
 				'reorder-' . $post_type,            // Menu slug
 				array( $this, 'sort_posts' )        // Callback function
 			);
+			$this->reorder_page = add_query_arg( array( 'page' => 'reorder-' . $post_type ), admin_url( $menu_location ) );
 		}
 		else {
 			$hook = add_posts_page(
 				$this->heading,                     // Page title (unneeded since specified directly)
 				apply_filters( 'metronet_reorder_menu_label_' . $post_type, $this->menu_label ),                  // Menu title
-				'edit_posts',                       // Capability
+				'edit_pages',                       // Capability
 				'reorder-posts',                    // Menu slug
 				array( $this, 'sort_posts' )        // Callback function
 			);
+			$this->reorder_page = add_query_arg( array( 'page' => 'reorder-posts' ), admin_url( 'edit.php' ) );
 		}
+		do_action( 'metronet_reorder_posts_add_menu_' . $post_type, $hook ); //Allow other plugin authors to add scripts/styles to our menu items
+		do_action( 'metronet_reorder_menu_url_' . $post_type, $this->reorder_page );
 		add_action( 'admin_print_styles-' . $hook,  array( $this, 'print_styles'     ) );
 		add_action( 'admin_print_scripts-' . $hook, array( $this, 'print_scripts'    ) );
 	}
 	
 	/**
+	 * Output the main Reorder Interface
+	 *
+	 * @author Ryan Hellyer <ryan@metronet.no> and Ronald Huereca <ronalfy@gmail.com>
+	 * @since Reorder 2.1.0
+	 * @access public
+	 * @global string $post_type
+	 */
+	public function output_interface() {
+		echo '<br />';
+		$post_count_obj = wp_count_posts( $this->post_type );
+		$post_count = isset( $post_count_obj->{$this->post_status} )  ?absint( $post_count_obj->{$this->post_status} ) : absint( $post_count_obj[ 'publish' ] );
+		if ( $post_count >= 1000 ) {
+			printf( '<div class="error"><p>%s</p></div>', sprintf( __( 'There are over %s posts found.  We do not recommend you sort these posts for performance reasons.', 'metronet_reorder_posts' ), number_format( $post_count ) ) );
+		}
+		?>
+		<div id="reorder-error"></div>
+		<div><img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" id="loading-animation" /></div>
+		<div class="updated">
+			<p><strong>
+			<?php echo sprintf( __( 'Note:  reordering here does not change the order on your website without some code modifications.  Please see our <a target="_blank" href="%s">Wiki</a>.', 'metronet-reorder-posts' ), 'https://github.com/ronalfy/reorder-posts/wiki' ); ?>
+			</strong></p>
+		</div>
+		<?php echo esc_html( $this->initial ); ?>
+		<?php
+		//Output non hierarchical posts
+		$page = isset( $_GET[ 'paged' ] ) ? absint( $_GET[ 'paged' ] ) : 0;
+		if ( $page == 0 ) {
+			$offset = 0;	
+		} elseif ( $page > 1 ) {
+			$offset = $this->offset * ( $page - 1 );
+		}
+		printf( '<input type="hidden" id="reorder-offset" value="%s" />', absint( $offset ) );
+		add_filter( 'found_posts', array( $this, 'adjust_offset_pagination' ), 10, 2 );
+		$post_query = new WP_Query(
+			array(
+				'post_type'      => $this->post_type,
+				'posts_per_page' => $this->posts_per_page,
+				'orderby'        => 'menu_order title',
+				'order'          => $this->order,
+				'post_status'    => $this->post_status,
+				'post_parent' => 0,
+				'offset' => $offset
+			)
+		);
+		remove_filter( 'found_posts', array( $this, 'adjust_offset_pagination' ), 10, 2 );
+		if( $post_query->have_posts() ) {
+			echo '<ul id="post-list">';
+			while( $post_query->have_posts() ) {
+				global $post;
+				$post_query->the_post();
+				$this->output_row( $post );	
+			}
+			echo '</ul><!-- #post-list -->';
+			
+			//Show pagination links
+			if( $post_query->max_num_pages > 1 ) {
+				echo '<div id="reorder-pagination">';
+				$current_url = add_query_arg( array( 'paged' => '%#%' ) );
+				$pagination_args = array(
+					'base' => $current_url,
+					'total' => $post_query->max_num_pages,
+					'current' => ( $page == 0 ) ? 1 : $page
+				);
+				echo paginate_links( $pagination_args );
+				echo '</div>';
+			}
+		} else {
+			echo sprintf( '<h3>%s</h3>	', esc_html__( 'There is nothing to sort at this time', 'metronet-reorder-posts' ) );	
+		}
+		echo esc_html( $this->final ); 	
+	}
+	/**
 	* Post Row Output
 	*
-	* @author Ronald Huereca <ronald@metronet.no>
-	* @since Reorder 1.0.1
+	* @author Ronald Huereca <ronalfy@gmail.com>
+	* @since Reorder 2.1.0
 	* @access private
 	* @param stdclass $post object to post
 	*/
-	private function output_row( $the_post ) {
+	private function output_row( $post ) {
 		global $post;
-		$post = $the_post;
 		setup_postdata( $post );
 		?>
-		<li id="list_<?php the_id(); ?>"><div><?php the_title(); ?></div></li>
+		<li id="list_<?php the_id(); ?>" data-id="<?php the_id(); ?>" data-menu-order="<?php echo absint( $post->menu_order ); ?>" data-parent="<?php echo absint( $post->post_parent ); ?>" data-post-type="<?php echo esc_attr( $post->post_type ); ?>">
+			<?php
+			//Get the children
+			$args = array(
+				'post_type' => $this->post_type,
+				'post_status' => $this->post_status,
+				'posts_per_page' => 100, /*hope there's never more than 100 children*/
+				'post_parent' => get_the_ID(),
+				'orderby'        => 'menu_order',
+				'order'          => $this->order,
+			);
+			$children = new WP_Query( $args );
+			//Output parent title
+			if( $children->have_posts() ) {
+				?>
+				<div><?php the_title(); ?><?php echo ( defined( 'REORDER_DEBUG' ) && REORDER_DEBUG == true ) ? ' - Menu Order:' . absint( $post->menu_order ) : ''; ?><a href='#' style="float: right"><?php esc_html_e( 'Expand', 'metronet-reorder-posts' ); ?></a></div>
+				<?php
+			} else {
+				?>
+				<div><?php the_title(); ?><?php echo ( defined( 'REORDER_DEBUG' ) && REORDER_DEBUG == true ) ? ' - Menu Order:' . absint( $post->menu_order ) : ''; ?></div>
+				<?php
+			}
+			
+			if( $children->have_posts() ) {
+				echo '<ul class="children">';
+				while( $children->have_posts() ) {
+					global $post;
+					$children->the_post();
+					$this->output_row( $post );
+				}
+				echo '</ul>';
+			}	
+			?>
+		</li>
 		<?php
 	} //end output_row
 	
 	/**
-	* Post Row Output for Hierarchical posts
-	*
-	* @author Ronald Huereca <ronald@metronet.no>
-	* @since Reorder 1.0.1
-	* @access private
-	* @param stdclass $post object to post
-	* @param array $all_children - array of children 
-	*/
-	private function output_row_hierarchical( $the_post, $post_children, $all_children ) {
-		global $post;
-		$post = $the_post;
-		$post_id = $the_post->ID;
-		
-		setup_postdata( $post );
-		?>
-		<li id="list_<?php the_id(); ?>">
-			<div><?php the_title(); ?> <a href='#' style="float: right"><?php esc_html_e( 'Expand', 'metronet-reorder-posts' ); ?></a></div>
-			<ul class='children'>
-			<?php $this->output_row_children( $post_children, $all_children ); ?>
-			</ul>
-		</li>
-		<?php
-		
-		?>
-		<?php
-	} //end output_row_hierarchical
-	
-	/**
-	* Output children posts
-	*
-	* @author Ronald Huereca <ronald@metronet.no>
-	* @since Reorder 1.0.1
-	* @access private
-	* @param stdclass $post object to post
-	* @param array $children_pages - array of children 
-	*/
-	private function output_row_children( $children_pages, $all_children ) {
-		foreach( $children_pages as $child ) {
-			$post_id = $child->ID;
-			if ( isset( $all_children[ $post_id ] ) && !empty( $all_children[ $post_id ] ) ) {
-				$this->output_row_hierarchical( $child, $all_children[ $post_id ], $all_children );
-			} else {
-				$this->output_row( $child );
-			}
-			
-		} //end foreach $child
-	} //end output_row_children
-	
-	
-
-	/**
-	 * HTML output
+	 * Initial HTML output
 	 *
-	 * @author Ryan Hellyer <ryan@metronet.no>
-	 * @since Reorder 1.0
+	 * @author Ryan Hellyer <ryan@metronet.no> and Ronald Huereca <ronalfy@gmail.com>
+	 * @since Reorder 2.1.0
 	 * @access public
 	 * @global string $post_type
 	 */
 	public function sort_posts() {
-		$has_posts = false;
+		//Dev note - Settings API not used here because there are no options to save.
 		?>
-		</style>
 		<div class="wrap">
 			<h2>
 				<?php echo esc_html( $this->heading ); ?>
-				<img src="<?php echo esc_url( admin_url( 'images/loading.gif' ) ); ?>" id="loading-animation" />
 			</h2>
-			<div id="reorder-error"></div>
-			<?php echo esc_html( $this->initial ); ?>
-		<?php
-		if ( is_post_type_hierarchical( $this->post_type ) ) {
-			$pages = get_pages( array( 
-				'sort_column' => 'menu_order',
-				'post_type' => $this->post_type,
-			) );
-			if( $pages ) {
-				$has_posts = true;
-				echo '<ul id="post-list">';
-				//Get hiearchy of children/parents
-				$top_level_pages = array();
-				$children_pages = array();
-				foreach( $pages as $page ) {
-					if ( $page->post_parent == 0 ) {
-						//Parent page
-						$top_level_pages[] = $page;
-					} else {
-						$children_pages[ $page->post_parent ][] = $page;
-					}
-				} //end foreach
-							 
-				foreach( $top_level_pages as $page ) {
-					$page_id = $page->ID;
-					if ( isset( $children_pages[ $page_id ] ) && !empty( $children_pages[ $page_id ] ) ) {
-						//If page has children, output page and its children
-						$this->output_row_hierarchical( $page, $children_pages[ $page_id ], $children_pages );
-					} else {
-						$this->output_row( $page );
-					}
-				}
-				echo '</ul>';	 
-			}		 
-		} else {
-			//Output non hierarchical posts
-			$post_query = new WP_Query(
+			<?php
+			$tabs = 
+			array(
 				array(
-					'post_type'      => $this->post_type,
-					'posts_per_page' => -1,
-					'orderby'        => 'menu_order',
-					'order'          => $this->order,
-					'post_status'    => $this->post_status,
+					'url' => $this->reorder_page /* URL to the tab */,
+					'label' => $this->heading,
+					'get' => 'main' /*$_GET variable*/,
+					'action' => 'metronet_reorder_posts_interface_' . $this->post_type /* action variable in do_action */
 				)
 			);
-			$posts = $post_query->get_posts();
-			if( $posts && !empty( $posts ) ) {
-				$has_posts = true;
-				echo '<ul id="post-list">';
-				foreach( $posts as $post ) {
-					$this->output_row( $post );
-				} //end foreach
-				echo '</ul>';
-			}
-		}
-		if ( false === $has_posts ) {
-			echo sprintf( '<h3>%s</h3>	', esc_html__( 'There is nothing to sort at this time', 'metronet-reorder-posts' ) );
-		}
-		echo esc_html( $this->final ); 
-		?>
+			$tabs = apply_filters( 'metronet_reorder_posts_tabs_' . $this->post_type, (array)$tabs );
+			$tabs_count = count( $tabs );
+			
+			//Output tabs
+			$tab_html = '';
+			if ( $tabs && !empty( $tabs ) )  {
+				$tab_html .=  '<h2 class="nav-tab-wrapper">';
+				$active_tab = isset( $_GET[ 'tab' ] ) ? sanitize_text_field( $_GET[ 'tab' ] ) : 'main';
+				$do_action = false;
+				foreach( $tabs as $tab ) {
+					$classes = array( 'nav-tab' );
+					$tab_get = isset( $tab[ 'get' ] ) ? $tab[ 'get' ] : '';
+					if ( $active_tab == $tab_get ) {
+						$classes[] = 'nav-tab-active';
+						$do_action = isset( $tab[ 'action' ] ) ? $tab[ 'action' ] : false;
+					}
+					$tab_url = isset( $tab[ 'url' ] ) ? $tab[ 'url' ] : '';
+					$tab_label = isset( $tab[ 'label' ] ) ? $tab[ 'label' ] : ''; 
+					$tab_html .= sprintf( '<a href="%s" class="%s">%s</a>', esc_url( $tab_url ), esc_attr( implode( ' ', $classes ) ), esc_html( $tab[ 'label' ] ) );
+				}
+				$tab_html .= '</h2>';
+				if ( $tabs_count > 1 ) {
+					echo $tab_html;	
+				}
+				if ( $do_action ) {
+					do_action( $do_action );	
+				}
+			}	
+			?>
 		</div><!-- .wrap -->
 		<?php
 	} //end sort_posts

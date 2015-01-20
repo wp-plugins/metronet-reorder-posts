@@ -2,8 +2,8 @@
 /*
 Plugin Name: Metronet Reorder Posts
 Plugin URI: https://wordpress.org/plugins/metronet-reorder-posts/
-Description: Reorder posts
-Version: 2.0.2
+Description: Easily reorder posts and pages in WordPress
+Version: 2.1.0
 Author: Ryan Hellyer, Ronald Huereca, Scott Basgaard
 Author URI: https://github.com/ronalfy/reorder-posts
 Text Domain: metronet-reorder-posts
@@ -50,6 +50,7 @@ require( 'class-reorder-admin.php' );
  * @since 1.0
  * @author Ryan Hellyer <ryan@metronet.no>
  */
+define( 'REORDER_ALLOW_ADDONS', true ); // Plugin folder DIR
 define( 'REORDER_DIR', rtrim( plugin_dir_path(__FILE__), '/' ) ); // Plugin folder DIR
 define( 'REORDER_URL', rtrim( plugin_dir_url(__FILE__), '/' ) ); // Plugin folder URL
 define( 'REORDER_BASENAME', plugin_basename(__FILE__) ); //Plugin basename
@@ -63,6 +64,7 @@ define( 'REORDER_BASENAME', plugin_basename(__FILE__) ); //Plugin basename
  */
 add_action( 'wp_loaded', 'mn_reorder_posts_init', 100 ); //Load low priority in init for other plugins to generate their post types
 function mn_reorder_posts_init() {
+	global $mn_reorder_instances;
 	$post_types = get_post_types( array(), 'names' );
 	
 	//Get plugin options for post types and exclude as necessary
@@ -77,6 +79,7 @@ function mn_reorder_posts_init() {
 	
 	// Add filter to allow users to control which post-types the plugin is used with via their theme
 	$post_types = array_unique( apply_filters( 'metronet_reorder_post_types', $post_types ) );
+	do_action( 'metronet_reorder_post_types_loaded', $post_types );
 		
 	foreach ( $post_types as $post_type ) {
 		//Generate heading
@@ -85,16 +88,18 @@ function mn_reorder_posts_init() {
 		$heading = sprintf( __( 'Reorder %s', 'metronet-reorder-posts' ), $post_type_label );
 		
 		// Instantiate new reordering
-		new MN_Reorder(
-			array(
-				'post_type'   => $post_type,
-				'order'       => 'ASC',
-				'heading'     => $heading,
-				'final'       => '',
-				'initial'     => '',
-				'menu_label'  => __( 'Reorder', 'metronet-reorder-posts' ),
-				'post_status' => 'publish',
-			)
+		$mn_reorder_args = array(
+			'post_type'   => $post_type,
+			'order'       => 'ASC',
+			'heading'     => $heading,
+			'final'       => '',
+			'initial'     => '',
+			'menu_label'  => __( 'Reorder', 'metronet-reorder-posts' ),
+			'post_status' => 'publish',
+		);
+	
+		$mn_reorder_instances[ $post_type ] = new MN_Reorder(
+			$mn_reorder_args
 		);
 	}
 } //end mt_reorder_posts_init
@@ -104,4 +109,8 @@ function mn_reorder_init_language() {
 	//* Localization Code */
 	load_plugin_textdomain( 'metronet-reorder-posts', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 }
+
+/* Global variable for storing class instances */
+global $mn_reorder_instances;
+$mn_reorder_instances = array();
 
